@@ -77,7 +77,7 @@ if (args.stills) {
   }, ts, cols, tw);
   writeFileSync(out, b64(data)); console.log(out);
 } else if (args.frames) {
-  const from = Math.round(+(args.from || 0) * FPS), to = Math.min(Math.round(T.DUR * FPS), Math.round(+(args.to || T.DUR) * FPS)), workers = +(args.workers || 3);
+  const from = Math.round(+(args.from || 0) * FPS), to = Math.min(Math.round(T.DUR * FPS), Math.round(+(args.to || T.DUR) * FPS)), workers = +(args.workers || 1);
   mkdirSync(FRAMES, { recursive: true });
   const todo = []; for (let i = from; i < to; i++) { const f = `${FRAMES}/f${String(i).padStart(4, '0')}.jpg`; if (args.force || !existsSync(f) || statSync(f).size < 1000) todo.push(i); }
   console.log(`${todo.length} frames, ${workers} workers`);

@@ -116,6 +116,7 @@ function renderFrame(t) {
 window.renderAt = (t, type = 'image/jpeg', q = .95) => { renderFrame(t); return canvas.toDataURL(type, q); };
 window.renderFrame = renderFrame;
 window.story = story;
+window.probe = t => story.probe(t);
 
 // ---- live preview (index.html without ?render) ----
 if (!Q.has('render')) {

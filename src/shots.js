@@ -1,18 +1,6 @@
 // shots.js: every shot of the film. Each entry gets its marks (m, from timeline.js) and returns
 // { cam(lt), cast: { actor: track | fn(lt) }, fx(lt), ones? }. Angles in degrees, positions in metres.
-import * as THREE from 'three';
-import { track, clamp, lerp, p, ease, spring, wobble, pulse, hash, arc, smooth, noise3, DEG } from './lib.js';
-import { ground, laneCurve, L } from './set.js';
-
-const K = (...keys) => track(keys);
-const yawTo = (a, b) => Math.atan2(b[0] - a[0], b[1] - a[1]) / DEG;
-const still = o => () => o;
-
-// ---- expressions ----
-const X = {
-  happy: { smile: .8 }, shock: { eyeWide: 1.3, pupil: .55, mouth: .85, ears: 1, smile: 0 }, bored: { eyeOpen: .5, lidTilt: -6, smile: -.4, ears: -1 },
-  sly: { eyeOpen: .62, lidTilt: 8, smile: 1, grin: .8 }, grin: { grin: 1, smile: 1 }, calm: { mouth: 0, eyeWide: 1, pupil: 1, ears: 0 },
-};
+import { THREE, K, yawTo, still, X, track, clamp, lerp, p, ease, spring, wobble, pulse, hash, arc, smooth, noise3, DEG, ground, laneCurve, L } from './stage.js';
 
 // ---- the flock grazing (reused) ----
 const GRAZE = {
@@ -33,10 +21,12 @@ export const timmyAt = t => { const q = FLY(t); return [q.x, q.y + Math.sin(t * 
 export const SHOTS = {
   // ======================= 1. OPEN: crane down from the sky, the title lands in the field =======================
   open: (m, C) => {
-    const { title1, title2, title3 } = C.P.titles;
+    const title1 = C.text('SHAUN', { size: .95, depth: .26 }), title2 = C.text('THE SHEEP', { size: .52, depth: .22 });
+    const title3 = C.text('UP, UP & BAA-WAY!', { size: .3, depth: .1, color: 'yellow', edgeWidth: .06 });
     const Z = 8.5, g0 = ground(0, Z);
     const row2Top = new THREE.Box3().setFromObject(title2.group).max.y;
     return {
+      hero: ['shaun'],
       cam: K([0, { pos: [5, 24, 44], look: [-6, 27, -60], fov: 34 }], [4.4, { pos: [.4, 1.6, 15.4], look: [-.1, 1.1, Z] }, 'io3'], [8, { pos: [.25, 1.3, 14.3], look: [0, 1.0, Z] }, 'lin']),
       cast: {
         ...grazers(['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'mum', 'shirley']),
@@ -63,8 +53,9 @@ export const SHOTS = {
     const carAt = lt => { const x = carTr(lt).x; return [x, laneCurve(x)]; };
     const B = [-4.8, -11.3];
     return {
+      hero: 'bitzer',
       cam: lt => { const cx = carAt(lt)[0], k = smooth(m.go + 1.2, 6.2, lt);
-        return { pos: [-12.2, 1.45, -10.4], look: [lerp(-5.4, Math.min(16, cx * .8), k), lerp(.95, 1.1, k), lerp(-13.2, -15.5, k)], fov: 34, focus: lerp(7, 10, k) }; },
+        return { pos: [lerp(-9.6, -8.4, k), 1.25, lerp(-10.9, -11.4, k)], look: [lerp(-5.7, Math.min(16, cx * .8), k), lerp(.95, 1.1, k), lerp(-13.3, -15.5, k)], fov: 36, focus: lerp(4.6, 10, k) }; },
       cast: {
         car: lt => { const [x, z] = carAt(lt), x2 = carAt(lt + .05);
           const honk = pulse(lt, m.horn, 10) + pulse(lt, m.horn + .35, 10);
@@ -122,6 +113,7 @@ const zzz = (C, lt, from, head) => C.P.zzz.forEach((z, i) => { if (lt < from) re
 Object.assign(SHOTS, {
   // ======================= 3. COUNT: Bitzer ticks off the flock, one blast of the whistle =======================
   count: (m, C) => ({
+    hero: 'bitzer',
     cam: K([0, { pos: [-4.1, 1.05, -5.7], look: [-5, 1.0, -8.4], fov: 30 }], [4.5, { pos: [-4.25, 1.05, -6.05], look: [-5, 1.0, -8.4] }, 'lin']),
     cast: {
       bitzer: (lt, t) => {
@@ -139,9 +131,10 @@ Object.assign(SHOTS, {
 
   // ======================= 4. NAP: deckchair, headphones, gone =======================
   nap: (m, C) => ({
-    cam: K([0, { pos: [-5.2, 1.05, -6.1], look: [-6.4, .7, -8.3], fov: 32 }], [4.5, { pos: [-5.45, .95, -6.5], look: [-7.0, .62, -8.25] }]),
+    hero: 'bitzer',
+    cam: K([0, { pos: [-4.6, 1.15, -5.5], look: [-6.3, .75, -8.3], fov: 34 }], [4.5, { pos: [-5.2, 1.0, -6.2], look: [-7.0, .62, -8.25] }]),
     cast: {
-      bitzer: K([0, { x: -5.4, z: -8.3, yaw: -90, gaitAmp: .8, board: 1, armL: [40, 8, 80], smile: .4 }],
+      bitzer: K([0, { x: -5.2, z: -8.7, yaw: -90, gaitAmp: .8, board: 1, armL: [40, 8, 80], smile: .4 }],
         [1.0, { x: -6.85, z: -8.1, gaitAmp: .8 }, 'lin'], [1.1, { gaitAmp: 0 }], [1.3, { yaw: CHAIR.yaw, x: -7.0, z: -8.15 }],
         [m.sit, { sit: 0, y: 0, recline: 0, legs: [0, 0], board: 1 }], [m.sit + .35, { sit: 1, y: CHAIR.y, recline: 18, legs: CHAIR.legs, x: CHAIR.x, z: CHAIR.z, board: 0 }, 'out'],
         [m.phones - .35, { armL: [40, 8, 80], armR: [10, 10, 20] }], [m.phones - .05, { armL: [150, 25, 110], armR: [150, 25, 110], phones: 0 }], [m.phones, { phones: 1 }],
@@ -153,8 +146,9 @@ Object.assign(SHOTS, {
 
   // ======================= 5. BORED: Shaun sulks, Timmy chases a butterfly, a squeak =======================
   bored: (m, C) => {
-    const FLYP = lt => [1.1 + Math.sin(lt * 1.3) * .9 + lt * .12, .45 + Math.sin(lt * 3.1) * .18 + smooth(3.8, 5, lt) * 2, 3.7 + Math.cos(lt * 1.1) * .6];
+    const FLYP = lt => [-.2 + Math.sin(lt * 1.3) * .9 + lt * .12, .45 + Math.sin(lt * 3.1) * .18 + smooth(3.8, 5, lt) * 2, 1.2 + Math.cos(lt * 1.1) * .5];
     return {
+      hero: 'shaun',
       cam: K([0, { pos: [2.0, .52, 6.6], look: [1.3, .42, 2.7], fov: 30 }], [m.squeak, { pos: [1.85, .48, 5.7], look: [1.35, .45, 2.7] }, 'lin'], [7, { pos: [1.8, .5, 5.5], look: [1.4, .55, 2.7] }]),
       cast: {
         shaun: K([0, { x: 1.6, z: 2.6, yaw: 8, lie: 1, headPitch: 22, ...X.bored, look: [.2, -.1] }],
@@ -173,6 +167,7 @@ Object.assign(SHOTS, {
 
   // ======================= 6. BALLOONS drift over the hedge =======================
   balloons: (m, C) => ({
+    hero: 'balloons',
     cam: K([0, { pos: [8.4, .55, 6.8], look: [13.6, 2.9, 1.9], fov: 34 }], [4, { pos: [8.1, .5, 6.5], look: [12.4, 2.3, 2.3] }, 'lin']),
     cast: {
       balloons: K([0, { anchor: [17.2, 3.1, 1.6], lean: [-.7, .1], len: 1.3 }], [4, { anchor: [12.2, 1.2, 2.3], lean: [-.55, .1] }, 'lin']),
@@ -182,6 +177,7 @@ Object.assign(SHOTS, {
 
   // ======================= 7. GRAB: Timmy takes the string ... and goes up =======================
   grab: (m, C) => ({
+    hero: ['timmy', 'balloons'],
     cam: lt => { const ty = timmyAt(35 + lt)[1]; return { pos: [2.5, .7 + ty * .3, 5.9], look: [1.15, .42 + ty * .9, 3.0], fov: 32 }; },
     cast: {
       timmy: (lt, t) => {
@@ -198,7 +194,8 @@ Object.assign(SHOTS, {
 
   // ======================= 8. SHOCK: Shaun's take =======================
   shock: (m, C) => ({
-    cam: K([0, { pos: [.95, 1.0, 4.0], look: [1.95, .95, 2.2], fov: 28 }], [2.5, { pos: [1.05, 1.02, 3.75], look: [1.95, 1.05, 2.2] }, 'lin']),
+    hero: 'shaun',
+    cam: K([0, { pos: [.8, 1.15, 4.3], look: [1.95, 1.15, 2.2], fov: 30 }], [2.5, { pos: [.9, 1.2, 4.05], look: [1.95, 1.25, 2.2] }, 'lin']),
     cast: {
       shaun: (lt, t) => {
         const take = spring(lt, m.take, 2.6, .35), sq = 1 + wobble(lt, m.take + .05, 3, 5) * .18;
@@ -214,7 +211,8 @@ Object.assign(SHOTS, {
   leap: (m, C) => {
     const A0 = [1.6, 0, 2.6], A1 = [-.4, 0, 2.7];
     return {
-      cam: lt => ({ pos: [4.4, 1.3, 7.6], look: [lerp(3.0, .6, smooth(0, 3.2, lt)), lerp(1.1, 1.8, smooth(0, 2.2, lt)) - smooth(3, 4, lt) * .75, 2.6], fov: 40 }),
+      hero: 'shaun',
+      cam: lt => ({ pos: [lerp(3.6, 1.6, smooth(0, 3.4, lt)), .55 + smooth(3, 4, lt) * .35, 6.2], look: [lerp(3.2, .1, smooth(0, 3.4, lt)), lerp(1.2, 1.7, smooth(0, 2.2, lt)) - smooth(3.1, 4, lt) * 1.1, 2.6], fov: 46 }),
       cast: {
         shaun: (lt, t) => {
           if (lt < m.jump) { const u = clamp((lt - m.run) / (m.jump - m.run)); const x = lerp(4.3, A0[0], u);
@@ -239,7 +237,8 @@ Object.assign(SHOTS, {
     const lvl = (k, lt) => {             // position of tower level k under the sway/fall angle
       const sway = smooth(m.wobble, m.fall, lt) * 7 * Math.sin((lt - m.wobble) * Math.PI * 2 * 1.25) + smooth(m.wobble + .6, m.fall, lt) * 3;
       const fu = clamp((lt - m.fall) / (m.crash - m.fall)), th = (sway + ease.in(fu) * (78 + k * 6)) * DEG;
-      return { x: TB[0] - Math.sin(th) * (LV[k] + fu * k * .3), y: Math.cos(th) * LV[k] - fu * .2 * k, z: TB[1] + fu * (k - 1.5) * .25, rootRoll: th / DEG + fu * k * 25 };
+      return {
+      hero: 'shaun', x: TB[0] - Math.sin(th) * (LV[k] + fu * k * .3), y: Math.cos(th) * LV[k] - fu * .2 * k, z: TB[1] + fu * (k - 1.5) * .25, rootRoll: th / DEG + fu * k * 25 };
     };
     const member = (name, k, run0, runT, jumpT, extra = {}) => (lt, t) => {
       if (lt >= m.crash) { const b = Math.exp(-(lt - m.crash) * 8); return { ...PILE[name], y: (PILE[name].y || 0) + Math.abs(Math.sin((lt - m.crash) * 20)) * .25 * b, sq: 1 - .2 * b }; }
@@ -255,7 +254,7 @@ Object.assign(SHOTS, {
     const RUNEND = { f1: TB, f2: [-1.3, 2.9], f3: [-1.2, 2.3], shaun: [-1.35, 2.55] };
     return {
       cam: lt => { const up = smooth(m.s3, m.reach, lt), down = smooth(m.fall, m.crash, lt);
-        return { pos: [2.6, 1.9 + up * .5 - down * .4, 9.2], look: [lerp(-1.4, -2.3, up) - down * 1.2, 1.9 + up * 1.6 - down * 2.1, 2.6], fov: 38, shake: pulse(lt, m.crash, 5) * .08, focus: 7.8 }; },
+        const rise = smooth(m.s1, m.reach, lt); return { pos: [.6, 1.0 + rise * .6 - down * .4, 8.8], look: [lerp(-1.2, -2.4, rise) - down * 1.0, .9 + rise * 2.4 + up * .3 - down * 2.3, 2.6], fov: 44, shake: pulse(lt, m.crash, 5) * .08, focus: 6.8 }; },
       cast: {
         f1: member('f1', 0, [4.5, 1.2], m.s1, 99),
         f2: member('f2', 1, [4.8, 4.4], m.s2 - .1, m.s2),
@@ -277,6 +276,7 @@ Object.assign(SHOTS, {
 
   // ======================= 11. SNORE: the dummy falls from the sky into Bitzer's mouth =======================
   snore: (m, C) => ({
+    hero: 'bitzer',
     cam: K([0, { pos: [-5.85, 1.3, -6.95], look: [-7.1, .8, -8.25], fov: 30 }], [3, { pos: [-5.95, 1.28, -7.1], look: [-7.1, .78, -8.25] }]),
     cast: {
       bitzer: (lt, t) => { const bonk = lt > m.bonk ? Math.exp(-(lt - m.bonk) * 6) : 0, smack = lt > m.bonk + .25 && lt < m.suck ? .25 + .25 * Math.sin((lt - m.bonk) * 22) : 0;
@@ -293,6 +293,7 @@ Object.assign(SHOTS, {
 
   // ======================= 12. IDEA: out of the heap, a look around, a light bulb =======================
   idea: (m, C) => ({
+    hero: 'shaun',
     cam: lt => { const pan = smooth(2.5, 3.5, lt) * (1 - smooth(3.9, 4.5, lt));
       return { pos: [-1.5, 1.3, 6.1], look: [lerp(-3.8, -7.0, pan), lerp(1.05, .8, pan), lerp(2.7, 4.5, pan)], fov: 30 }; },
     cast: {
@@ -315,6 +316,7 @@ Object.assign(SHOTS, {
   setup: (m, C) => {
     const top = [-8.35, 1.0, 4.4], high = [-7.7, .98, 4.0];
     return {
+      hero: ['shaun', 'shirley'],
       cam: K([0, { pos: [-5.4, 2.4, 13.4], look: [-6.4, 1.2, 4.1], fov: 33 }], [8, { pos: [-5.6, 2.05, 11.4], look: [-6.5, 1.3, 4.1] }, 'lin']),
       cast: {
         shaun: K([0, { x: -3.1, z: 3.3, yaw: -110, up: 1, gaitAmp: .7, smile: .7, armL: [15, 12], armR: [15, 12] }], [1.2, { x: -4.45, z: 4.0, y: .02, gaitAmp: .7 }, 'lin'],
@@ -341,6 +343,7 @@ Object.assign(SHOTS, {
 
   // ======================= 14. LAUNCH: Shirley lands, Shaun goes up (on ones) =======================
   launch: (m, C) => ({
+    hero: 'shaun',
     ones: true,
     cam: lt => { const s = launchAt(79 + lt), w = smooth(.12, .55, lt);
       return { pos: [-2.2, .75, 8.2], look: [lerp(-4.9, s[0], w), lerp(.8, s[1] + .6, w), lerp(4.0, s[2], w)], fov: lerp(34, 40, w), shake: pulse(lt, m.slam, 7) * .06, roll: w * 4, focus: 5 }; },
@@ -358,6 +361,7 @@ Object.assign(SHOTS, {
 
   // ======================= 15. CATCH: the grab at the top, then the view =======================
   catch: (m, C) => ({
+    hero: ['shaun', 'timmy'],
     ones: true,
     cam: lt => { const t = 80.6 + lt, c = t < 81.05 ? [-4.3, 6.3, 3.55] : pairAt(t), o = smooth(2.0, 9.4, lt), a = lerp(18, 118, ease.io(o)) * DEG, R = lerp(4.6, 6.2, o);
       return { pos: [c[0] + Math.sin(a) * R, c[1] + .9 + o * 1.8, c[2] + Math.cos(a) * R], look: [c[0], c[1] + .75 - o * .3, c[2]], fov: 32, focus: R, shadowAt: [c[0], 0, c[2]], shadowSize: 18 }; },
@@ -376,7 +380,8 @@ Object.assign(SHOTS, {
   descend: (m, C) => {
     const SH = [-1.2, 4.5];
     const cheer = (x, z, yaw, ph) => (lt, t) => { const u = clamp((lt - .6 - ph * .3) / 2.8), c = smooth(m.cheer, m.cheer + .3, lt);
-      const from = [x - 5 + ph * 1.5, z - 2 + ph]; return { x: lerp(from[0], x, ease.out(u)), z: lerp(from[1], z, ease.out(u)), yaw: u < 1 ? yawTo(from, [x, z]) : yaw, run: 1, gaitAmp: u > 0 && u < 1 ? 1 : 0, gait: lt * 15 + ph,
+      const from = [x - 5 + ph * 1.5, z - 2 + ph]; return {
+      hero: 'shaun', x: lerp(from[0], x, ease.out(u)), z: lerp(from[1], z, ease.out(u)), yaw: u < 1 ? yawTo(from, [x, z]) : yaw, run: 1, gaitAmp: u > 0 && u < 1 ? 1 : 0, gait: lt * 15 + ph,
         up: c, armL: [170, 20], armR: [170, 20], y: c * Math.abs(Math.sin(t * 8 + ph)) * .18, headPitch: lerp(-30, -10, c), look: [0, lerp(.6, 0, c)], mouth: c * (Math.sin(t * 6 + ph) > 0 ? .7 : .3), ...X.happy, eyeWide: 1.05 }; };
     return {
       cam: lt => ({ pos: [2.0, 1.1, 11.8], look: [lerp(-2.6, -1.2, smooth(0, 4.5, lt)), lerp(3.4, 1.3, smooth(.5, 4.8, lt)), 4.4], fov: 34, shake: pulse(lt, m.land, 6) * .03 }),
@@ -401,8 +406,8 @@ Object.assign(SHOTS, {
 });
 
 // staging for the ending
-const HORNPOS = { shirley: [-1.2, 4.5, 20], f1: [-3.1, 4.0, 40], f2: [.6, 3.6, -30], f3: [-2.8, 3.0, 20], f4: [.2, 5.8, -20], mum: [-2.3, 5.65, 90] };
-const BITZER_SKY = K([113, { x: 3.9, y: 3.2, z: -7.35 }], [117, { x: .6, y: 5.0, z: -11.5 }, 'lin'], [120, { x: -.8, y: 7.4, z: -13.5 }, 'lin']);
+const HORNPOS = { shirley: [-1.2, 4.5, 20], f1: [-3.1, 4.0, 40], f2: [.6, 3.6, -30], f3: [-2.8, 3.0, 20], f4: [.5, 5.1, -20], mum: [-2.3, 5.65, 90] };
+const BITZER_SKY = K([113, { x: 3.9, y: 3.2, z: -7.35 }], [114.2, { x: .5, y: 3.4, z: -10.5 }, 'lin'], [117, { x: -2.9, y: 3.9, z: -12.6 }, 'lin'], [120, { x: -.8, y: 7.4, z: -13.5 }, 'lin']);
 const floating = (t, extra = {}) => { const q = BITZER_SKY(t); return { x: q.x, y: q.y + Math.sin(t * 1.5) * .08, z: q.z, abs: true, yaw: 90 + (t - 113) * 12, paddle: .6, armR: [165, 8, 10], armL: [20, 20, 30],
   board: 0, eyeOpen: .55, blink: false, smile: -.15, ears: -1, headPitch: 10, legs: [10, -10], ...extra }; };
 
@@ -410,7 +415,8 @@ Object.assign(SHOTS, {
   // ======================= 17. HORN: beep-beep, every head snaps =======================
   horn: (m, C) => {
     const froze = (n, extra = {}) => (lt, t) => { const [x, z, yaw] = HORNPOS[n], snap = lt > m.snap ? 1 : 0, drop = smooth(1.2, 1.9, lt);
-      return { x, z, yaw, up: n === 'shirley' ? 0 : 1, armL: [lerp(170, 20, drop), 20], armR: [lerp(170, 20, drop), 20], headYaw: snap ? clamp(65 - yaw, -85, 85) : 0, headPitch: snap ? -5 : -10,
+      return {
+      hero: 'shaun', x, z, yaw, up: n === 'shirley' ? 0 : 1, armL: [lerp(170, 20, drop), 20], armR: [lerp(170, 20, drop), 20], headYaw: snap ? clamp(65 - yaw, -85, 85) : 0, headPitch: snap ? -5 : -10,
         eyeWide: snap ? 1.3 : 1.05, pupil: snap ? .6 : 1, mouth: snap ? .35 : .6, smile: snap ? 0 : .8, ears: snap, ...extra }; };
     return {
       cam: K([0, { pos: [.8, 1.35, 8.7], look: [-1.3, 1.25, 4.6], fov: 34 }], [2, { pos: [.7, 1.33, 8.3], look: [-1.3, 1.2, 4.6] }, 'lin']),
@@ -427,6 +433,7 @@ Object.assign(SHOTS, {
 
   // ======================= 18. WAKE: Bitzer jolts up, the dummy goes over his shoulder, whistle! =======================
   wake: (m, C) => ({
+    hero: 'bitzer',
     cam: K([0, { pos: [-5.45, .95, -6.5], look: [-7.0, .68, -8.2], fov: 31 }], [2, { pos: [-5.3, 1.05, -6.3], look: [-6.6, .9, -8.0] }, 'io']),
     cast: {
       bitzer: (lt, t) => {
@@ -454,17 +461,18 @@ Object.assign(SHOTS, {
     const runner = n => (lt, t) => {
       const a = FROM[n], b = [LINE[n], LZ], u = clamp(lt / ARR[n]), e = n === 'shirley' ? ease.in(u) : ease.io(u), done = lt > ARR[n];
       const inno = smooth(m.still, m.still + .3, lt);
-      return { x: lerp(a[0], b[0], e), z: lerp(a[1], b[1], e), yaw: done ? 180 : yawTo(a, b), run: 1, gaitAmp: done ? 0 : 1, gait: lt * (n === 'shirley' ? 24 : 16),
+      return {
+      hero: 'bitzer', x: lerp(a[0], b[0], e), z: lerp(a[1], b[1], e), yaw: done ? 180 : yawTo(a, b), run: 1, gaitAmp: done ? 0 : 1, gait: lt * (n === 'shirley' ? 24 : 16),
         sq: done ? 1 - .12 * Math.exp(-(lt - ARR[n]) * 9) * Math.cos((lt - ARR[n]) * 30) : 1, up: n === 'shaun' || n === 'timmy' ? inno : 0,
         look: [Math.sin(t * .7 + LINE[n]) * .3 * inno, .45 * inno], headPitch: -12 * inno, mouth: inno ? .12 : 0, smile: .4, eyeOpen: inno ? .8 : 1, roll: inno * Math.sin(t * 2 + LINE[n]) * 3,
         ...(n === 'shaun' ? { armL: [-40, 20], armR: [-40, 20], grin: .5 * inno } : {}), ...(n === 'timmy' ? { dummy: true, suck: 1, armL: [15, 12], armR: [15, 12] } : {}) };
     };
     return {
-      cam: K([0, { pos: [-6.6, 2.1, -9.5], look: [.3, .55, -5.6], fov: 36 }], [5, { pos: [-6.3, 1.9, -9.3], look: [.6, .65, -6.1] }, 'lin']),
+      cam: K([0, { pos: [-8.9, 2.5, -9.3], look: [.2, .5, -5.9], fov: 36 }], [5, { pos: [-8.6, 2.3, -9.2], look: [.5, .6, -6.2] }, 'lin']),
       cast: {
         ...Object.fromEntries(Object.keys(LINE).map(n => [n, runner(n)])),
         balloons: { hold: 'shaun', len: 1.2 },
-        bitzer: K([0, { x: -5.6, z: -9.2, yaw: 120, gaitAmp: 1, run: 1, board: 1, armL: [70, 8, 85] }], [2.4, { x: -3.9, z: -7.4, gaitAmp: 1 }, 'lin'], [2.5, { gaitAmp: 0, yaw: 0 }],
+        bitzer: K([0, { x: -5.0, z: -9.8, yaw: 120, gaitAmp: 1, run: 1, board: 1, armL: [70, 8, 85] }], [2.4, { x: -3.9, z: -7.4, gaitAmp: 1 }, 'lin'], [2.5, { gaitAmp: 0, yaw: 0 }],
           [2.6, { armR: [40, 10, 40], whistleUp: 0 }], [2.75, { armR: [128, 8, 130], whistleUp: 1, eyeOpen: .3 }], [3.3, { armR: [128, 8, 130], whistleUp: 1 }], [3.45, { armR: [45, 5, 60], whistleUp: 0, eyeOpen: 1, squint: .5, lidTilt: 10, yaw: 90, headYaw: -70 }],
           [3.5, { x: -3.9, gaitAmp: 0 }], [3.6, { gaitAmp: .6 }], [5, { x: -1.9, gaitAmp: .6 }, 'lin']),
       },
@@ -475,7 +483,8 @@ Object.assign(SHOTS, {
   busted: (m, C) => {
     const liftY = lt => lt < m.lift ? 0 : 3.2 * ease.in(clamp((lt - m.lift) / 1.8));
     return {
-      cam: lt => { const by = liftY(lt); return { pos: [5.5, 1.5 + by * .3, -9.6], look: [3.95, 1.2 + by * .8, -6.6], fov: 34 }; },
+      hero: ['shaun', 'bitzer'],
+      cam: lt => { const by = liftY(lt); return { pos: [5.9, 1.45 + by * .3, -9.9], look: [3.9, 1.35 + by * .8, -6.6], fov: 36 }; },
       cast: {
         bitzer: (lt, t) => {
           const walk = clamp(lt / m.stop), turned = smooth(m.stop - .1, m.stop + .2, lt), up = smooth(m.lookup, m.lookup + .2, lt) * (1 - smooth(m.lookup + .6, m.lookup + .8, lt));
@@ -491,7 +500,7 @@ Object.assign(SHOTS, {
             headPitch: lt > m.lift ? -30 : 0, headRoll: lt > m.lookup + .6 && lt < m.hand ? 10 : 0 }; },
         f4: (lt, t) => ({ x: LINE.f4, z: LZ, yaw: 180, look: [.4, .3], smile: .4, headPitch: lt > m.lift + .6 ? -30 : 0 }),
         f3: (lt, t) => ({ x: LINE.f3, z: LZ, yaw: 180, look: [.4, .3], smile: .4, headPitch: lt > m.lift + .8 ? -30 : 0 }),
-        balloons: (lt) => ({ hold: 'shaun', hold2: 'bitzer', mix: smooth(m.hand, m.hand + .4, lt), len: 1.2 }),
+        balloons: (lt) => ({ hold: 'shaun', hold2: 'bitzer', mix: smooth(m.hand, m.hand + .4, lt), len: 1.55, lean: [0, lt < m.hand ? .7 : 0] }),
       },
     };
   },
@@ -500,7 +509,8 @@ Object.assign(SHOTS, {
   farmback: (m, C) => {
     const carTr = K([0, { x: 19 }], [m.stop, { x: -4.6 }, 'out3']);
     return {
-      cam: K([0, { pos: [1.3, 2.5, -1.2], look: [-2.6, 1.9, -13.5], fov: 42, focus: 13, aperture: .0012 }], [4, { pos: [1.2, 2.45, -1.6], look: [-2.8, 2.1, -13.5] }, 'lin']),
+      hero: 'car',
+      cam: K([0, { pos: [2.2, 2.8, -3.3], look: [-3.6, 1.35, -14.4], fov: 40, focus: 12, aperture: .0014 }], [4, { pos: [2.0, 2.75, -3.7], look: [-3.5, 1.6, -14.4] }, 'lin']),
       cast: {
         car: (lt, t) => { const x = carTr(lt).x, st = lt - m.stop, nod = lt > m.nod && lt < m.nod + .7 ? Math.sin((lt - m.nod) * 18) * 10 : 0;
           return { x, z: laneCurve(x), yaw: -90, engine: 1, spin: (x - 19) / .24, tilt: st > 0 ? wobble(lt, m.stop, 2.5, 5) * 4 : 0, fYaw: lt > m.stop - .5 ? 72 : 20, fPitch: nod, fSmile: lt > m.nod ? 1.2 : .6 }; },
@@ -514,12 +524,13 @@ Object.assign(SHOTS, {
 
   // ======================= 22. THE END: letters, a "Baa!", a wink, iris out =======================
   end: (m, C) => {
-    const { endT } = C.P.titles, Z = 5.2, g0 = ground(0, Z);
+    const endT = C.text('THE END', { size: .8 }), Z = 5.2, g0 = ground(0, Z);
     return {
-      cam: lt => ({ pos: [.3, 1.2, 10.4], look: [.2, .95, Z], fov: 34, irisOn: 'shaun', iris: lt < m.iris ? 2 : lt < m.iris + .45 ? lerp(1.3, .17, ease.out3((lt - m.iris) / .45)) : lt < 2.6 ? .17 : lerp(.17, 0, ease.in3(clamp((lt - 2.6) / .3))), fade: smooth(2.85, 3, lt) }),
+      hero: 'shaun',
+      cam: lt => ({ pos: [.5, 1.2, 10.4], look: [lerp(.2, .9, smooth(m.wink, m.iris + .4, lt)), .95, Z], fov: 34, irisOn: lt > m.pop + .2 ? 'shaun' : null, iris: lt < m.iris ? 2 : lt < m.iris + .45 ? lerp(1.3, .17, ease.out3((lt - m.iris) / .45)) : lt < 2.6 ? .17 : lerp(.17, 0, ease.in3(clamp((lt - 2.6) / .3))), fade: smooth(2.85, 3, lt) }),
       cast: {
         shaun: (lt, t) => { if (lt < m.pop) return { x: 4, z: Z + .9, y: -3, vis: false };
-          const u = clamp((lt - m.pop) / .35), q = arc([3.6, 0, Z + .9], [1.95, 0, Z + .85], u, .8), baa = lt > m.baa && lt < m.baa + .45, land = lt - m.pop - .35;
+          const u = clamp((lt - m.pop) / .35), q = arc([3.4, 0, Z + .9], [1.75, 0, Z + .85], u, .8), baa = lt > m.baa && lt < m.baa + .45, land = lt - m.pop - .35;
           return { x: q[0], y: q[1], z: q[2], yaw: -8, up: 1, sq: land > 0 ? 1 - .15 * Math.exp(-land * 9) * Math.cos(land * 28) : 1.08, armL: baa ? [60, 45] : [20, 15], armR: lt > m.wink ? [100, -12] : baa ? [60, 45] : [20, 15],
             mouth: baa ? .95 : 0, headPitch: baa ? -12 : 0, wink: lt > m.wink ? 1 : 0, grin: lt > m.wink ? 1 : 0, smile: 1, ears: baa ? 1 : .3 }; },
         ...grazers(['f1', 'f2', 'mum']),

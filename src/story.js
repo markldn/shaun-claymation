@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { makeSheep, makeBitzer, makeCar, makeBalloons, makeButterfly, SHEEP_DEF, BITZER_DEF, CAR_DEF, BALLOON_DEF } from './characters.js';
 import { makeSeesaw, makeDeckchair, ground, laneCurve, L } from './set.js';
-import { M, blob, mesh, ball } from './clay.js';
+import { M, blob, mesh, ball, capsule, lumpy } from './clay.js';
 import { loadFont, clayText } from './text.js';
 import { track, travelled, clamp, lerp, p, ease, spring, wobble, pulse, hash, arc, DEG, smooth, noise3 } from './lib.js';
 import { SHOTS } from './shots.js';
@@ -51,24 +51,29 @@ export async function buildStory(scene, SET, camera) {
   // Bitzer's headphones fly off in the wake shot; the hand-held dummy for the snore shot sits in his mouth
   P.flyPhones = A.bitzer.phones.clone(); scene.add(P.flyPhones);
   P.bDummy = P.dummy.clone(); A.bitzer.head.add(P.bDummy); P.bDummy.position.set(0, -.07, .26); P.bDummy.scale.setScalar(1.0);
-  // titles
-  const title1 = clayText('SHAUN', { size: .95, depth: .26, mat: M.letter, edgeMat: M.letterEdge, seed: 1 });
-  const title2 = clayText('THE SHEEP', { size: .52, depth: .22, mat: M.letter, edgeMat: M.letterEdge, seed: 20 });
-  const title3 = clayText('UP, UP & BAA-WAY!', { size: .3, depth: .1, mat: M.letterYellow, edgeMat: M.letterEdge, edge: .06, seed: 60 });
-  const endT = clayText('THE END', { size: .8, depth: .24, mat: M.letter, edgeMat: M.letterEdge, seed: 80 });
-  for (const t of [title1, title2, title3, endT]) scene.add(t.group);
-  P.titles = { title1, title2, title3, endT };
+  // ---- light: named presets keyed in time (T.light = [[t, 'morning'], ...]); default = a day across the film ----
+  const PRESET = {
+    morning: { az: 72, el: 17, sun: '#ffd49a', sunI: 2.7, hemiI: 1.0, skyC: '#c8dcff', groundC: '#6f8a45', rim: '#ffd8b0', rimI: .9, fog: '#e4e2dc', skyTop: '#6aa2e2', skyMid: '#b4d4f0', skyHor: '#fde2c0', exposure: 1.0 },
+    day: { az: 55, el: 30, sun: '#ffe9c8', sunI: 3.1, hemiI: 1.1, skyC: '#c0d8ff', groundC: '#6f8a45', rim: '#ffe6c8', rimI: .8, fog: '#d8e4ee', skyTop: '#5d9be0', skyMid: '#a8d0f0', skyHor: '#f4ead8', exposure: 1.0 },
+    noon: { az: 25, el: 42, sun: '#fff1dc', sunI: 3.3, hemiI: 1.15, skyC: '#bcd6ff', groundC: '#6f8a45', rim: '#fff0dc', rimI: .7, fog: '#d4e2ee', skyTop: '#5896de', skyMid: '#a4ccf0', skyHor: '#f0ead8', exposure: 1.0 },
+    afternoon: { az: -30, el: 24, sun: '#ffd09a', sunI: 3.1, hemiI: 1.0, skyC: '#c8d4f0', groundC: '#74874a', rim: '#ffc890', rimI: 1.0, fog: '#ecdcc8', skyTop: '#6194d6', skyMid: '#b8cce6', skyHor: '#fbd8b0', exposure: 1.02 },
+    golden: { az: -42, el: 15, sun: '#ffb877', sunI: 3.0, hemiI: .9, skyC: '#d4ccec', groundC: '#7a8048', rim: '#ffb070', rimI: 1.2, fog: '#f0d4b8', skyTop: '#6a8ccc', skyMid: '#c4c4e0', skyHor: '#ffc896', exposure: 1.04 },
+    dusk: { az: -55, el: 6, sun: '#ff9a66', sunI: 2.2, hemiI: .7, skyC: '#b8a8d8', groundC: '#5a6040', rim: '#ff9060', rimI: 1.3, fog: '#c8a8b8', skyTop: '#4a5a9c', skyMid: '#a890c0', skyHor: '#ffa878', exposure: 1.08 },
+    night: { az: 30, el: 40, sun: '#9fb4ff', sunI: 1.1, hemiI: .45, skyC: '#5a6aa8', groundC: '#243024', rim: '#8aa0ff', rimI: .8, fog: '#28324a', skyTop: '#0e1630', skyMid: '#1e2c54', skyHor: '#3a4870', exposure: 1.25 },
+    overcast: { az: 40, el: 45, sun: '#eef0f2', sunI: 1.4, hemiI: 1.6, skyC: '#d8dee6', groundC: '#6a7a50', rim: '#e8ecf0', rimI: .4, fog: '#c8ccd2', skyTop: '#a8b2bf', skyMid: '#c4cad2', skyHor: '#dcdfe2', exposure: 1.05 },
+  };
+  const lightKeys = (T.light || [[0, 'morning'], [.2, 'day'], [.58, 'noon'], [.8, 'afternoon'], [1, 'golden']].map(([u, n]) => [u * T.DUR, n]))
+    .map(([t, n]) => [t, typeof n === 'string' ? (PRESET[n] || PRESET.day) : { ...PRESET.day, ...n }]);
+  const LIGHT = track(lightKeys);
 
-  // ---- light over the day ----
-  const LIGHT = track([
-    [0, { az: 72, el: 17, sun: '#ffd49a', sunI: 2.7, hemiI: 1.0, skyC: '#c8dcff', groundC: '#6f8a45', rim: '#ffd8b0', rimI: .9, fog: '#e4e2dc', skyTop: '#6aa2e2', skyMid: '#b4d4f0', skyHor: '#fde2c0', exposure: 1.0 }],
-    [24, { az: 55, el: 30, sun: '#ffe9c8', sunI: 3.1, hemiI: 1.1, skyC: '#c0d8ff', groundC: '#6f8a45', rim: '#ffe6c8', rimI: .8, fog: '#d8e4ee', skyTop: '#5d9be0', skyMid: '#a8d0f0', skyHor: '#f4ead8', exposure: 1.0 }],
-    [70, { az: 25, el: 42, sun: '#fff1dc', sunI: 3.3, hemiI: 1.15, skyC: '#bcd6ff', groundC: '#6f8a45', rim: '#fff0dc', rimI: .7, fog: '#d4e2ee', skyTop: '#5896de', skyMid: '#a4ccf0', skyHor: '#f0ead8' }],
-    [96, { az: -30, el: 24, sun: '#ffd09a', sunI: 3.1, hemiI: 1.0, skyC: '#c8d4f0', groundC: '#74874a', rim: '#ffc890', rimI: 1.0, fog: '#ecdcc8', skyTop: '#6194d6', skyMid: '#b8cce6', skyHor: '#fbd8b0', exposure: 1.02 }],
-    [120, { az: -42, el: 15, sun: '#ffb877', sunI: 3.0, hemiI: .9, skyC: '#d4ccec', groundC: '#7a8048', rim: '#ffb070', rimI: 1.2, fog: '#f0d4b8', skyTop: '#6a8ccc', skyMid: '#c4c4e0', skyHor: '#ffc896', exposure: 1.04 }],
-  ]);
+  // ---- things a story can make for itself (built once, hidden each frame until a shot shows them) ----
+  const extras = [];
+  const textMat = c => ({ white: M.letter, yellow: M.letterYellow, red: M.letterRed }[c || 'white'] || M.clay(c));
+  const text = (str, o = {}) => { const t = clayText(String(str), { size: o.size ?? .8, depth: o.depth ?? .24, mat: textMat(o.color), edgeMat: o.edge === false ? null : M.letterEdge, edge: o.edgeWidth ?? .045, seed: extras.length * 17 + 3 });
+    scene.add(t.group); extras.push(t.group); return t; };
+  const prop = build => { const o = build({ THREE, M, blob, ball, mesh, capsule, lumpy }); scene.add(o); extras.push(o); return o; };
 
-  const ctx = { A, P, scene, camera, T, SET };
+  const ctx = { A, P, scene, camera, T, SET, text, prop };
   const shots = T.shots.map(s => ({ ...s, ...(SHOTS[s.id] ? SHOTS[s.id](s.m, ctx) : {}) }));
   const Q = new URLSearchParams(location.search);
   const lookShot = Q.has('look') && SHOTS.look ? { id: 'look', start: 0, end: 1e9, ...SHOTS.look({}, ctx, Q.get('look')) } : null;
@@ -96,7 +101,7 @@ export async function buildStory(scene, SET, camera) {
     for (const k in A) A[k].root.visible = false;
     P.bulb.visible = false; P.zzz.forEach(z => z.visible = false); P.dummy.visible = false; P.puffs.forEach(g => g.visible = false);
     P.faceGrass.visible = false; P.bDummy.visible = false; P.flyPhones.visible = false;
-    for (const k in P.titles) P.titles[k].group.visible = false;
+    for (const o of extras) o.visible = false;
     P.seesaw.pose({ angle: -14 });
   }
 
@@ -144,5 +149,25 @@ export async function buildStory(scene, SET, camera) {
       fade: c.fade || 0, iris: c.iris ?? 2, irisC,
     };
   }
-  return { apply, A, P, shots };
+  // Framing probe (tools/check.mjs): screen box of every visible cast member at time t, in 0..1 frame units.
+  const box = new THREE.Box3(), cv = new THREE.Vector3();
+  function probe(t) {
+    const S = apply(t), out = [];
+    for (const [n, r] of Object.entries(A)) {
+      if (!r.root.visible || n === 'fly') continue;
+      box.setFromObject(r.root); if (box.isEmpty()) continue;
+      let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9, behind = 0;
+      for (let k = 0; k < 8; k++) { cv.set(k & 1 ? box.max.x : box.min.x, k & 2 ? box.max.y : box.min.y, k & 4 ? box.max.z : box.min.z);
+        const d = cv.clone().sub(camera.position).dot(camera.getWorldDirection(new THREE.Vector3())); if (d < 0) behind++;
+        cv.project(camera); x0 = Math.min(x0, cv.x); x1 = Math.max(x1, cv.x); y0 = Math.min(y0, cv.y); y1 = Math.max(y1, cv.y); }
+      const vis = [Math.max(-1, x0), Math.min(1, x1), Math.max(-1, y0), Math.min(1, y1)];
+      const inside = behind < 8 && vis[1] > vis[0] && vis[3] > vis[2] ? (vis[1] - vis[0]) * (vis[3] - vis[2]) / ((x1 - x0) * (y1 - y0) || 1) : 0;
+      let head = null;
+      if (r.head) { const hp = r.head.getWorldPosition(new THREE.Vector3()), top = hp.clone().add(new THREE.Vector3(0, .18, 0)), dd = hp.clone().sub(camera.position).dot(camera.getWorldDirection(new THREE.Vector3()));
+        hp.project(camera); top.project(camera); head = { x: +((hp.x + 1) / 2).toFixed(3), y: +((1 - hp.y) / 2).toFixed(3), size: +(Math.abs(top.y - hp.y) / 2).toFixed(3), inFrame: dd > 0 && Math.abs(hp.x) < .95 && Math.abs(hp.y) < .95 }; }
+      out.push({ name: n, head, h: +((y1 - y0) / 2).toFixed(3), cx: +((x0 + x1) / 4 + .5).toFixed(3), cy: +(.5 - (y0 + y1) / 4).toFixed(3), inside: +inside.toFixed(2), dist: +camera.position.distanceTo(box.getCenter(cv)).toFixed(2) });
+    }
+    return out;
+  }
+  return { apply, probe, A, P, shots };
 }
