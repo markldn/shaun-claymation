@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Shaun the Sheep: Up, Up &amp; Baa-way! (live)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  html,body{margin:0;background:#111;color:#eee;font:13px system-ui,sans-serif}
+  canvas{display:block;width:100%;max-width:1920px;height:auto;margin:0 auto;background:#000}
+  #ui{padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  #ui input[type=range]{flex:1;min-width:240px}
+  #ui button{background:#2a2a2a;color:#eee;border:1px solid #444;border-radius:4px;padding:4px 8px;cursor:pointer}
+  #shots{display:flex;flex-wrap:wrap;gap:4px;padding:0 16px 16px}
+  #shots button{background:#1d1d1d;color:#bbb;border:1px solid #333;border-radius:3px;padding:3px 6px;font-size:12px;cursor:pointer}
+</style>
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/addons/" } }</script>
+</head><body>
+<canvas id="c"></canvas>
+<div id="ui" hidden><button id="play">play / pause</button><input id="t" type="range" min="0" value="0"><span id="lab"></span></div>
+<div id="shots"></div>
+<audio id="au" src="out/shaun.wav" preload="auto"></audio>
+<script src="src/timeline.js"></script>
+<script type="module">
+  window.addEventListener('error', e => { window.loadError = String(e.message || e); });
+  import('./src/main.js').catch(e => { window.loadError = e.stack || String(e); console.error(e); });
+</script>
+</body></html>
