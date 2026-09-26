@@ -13,9 +13,8 @@
 <script type="importmap">{ "imports": { "three": "./vendor/three.module.js", "three/addons/": "./vendor/addons/" } }</script>
 </head><body>
 <canvas id="c"></canvas>
-<div id="ui" hidden><button id="play">play / pause</button><input id="t" type="range" min="0" value="0"><span id="lab"></span></div>
+<div id="ui" hidden><button id="play">play / pause</button><input id="t" type="range" min="0" value="0"><span id="lab"></span><span id="snd" style="opacity:.6"></span></div>
 <div id="shots"></div>
-<audio id="au" src="out/shaun.wav" preload="auto"></audio>
 <script src="src/timeline.js"></script>
 <script type="module">
   window.addEventListener('error', e => { window.loadError = String(e.message || e); });

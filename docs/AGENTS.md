@@ -33,10 +33,10 @@ Never edit anything else. Read `docs/API.md` (actors, pose fields, props, camera
    `node tools/check.mjs --shot=<id> -v` checks one shot and prints each character's size in frame.
 4. Look: `node tools/render.mjs --sheet=auto --out=out/sheet.jpg` renders a contact sheet (2–3 stills per shot). Check
    the CRAFT.md critique list against it. Fix and repeat.
-5. Sound: `node tools/audio.mjs` (writes out/film.wav in seconds).
-6. Final: `node tools/render.mjs --frames && node tools/render.mjs --encode` -> `out/film.mp4`
-   (about 60–150 ms a frame on this box; always ONE render at a time: parallel GPU pages crash).
-7. Preview in a browser: `node tools/serve.mjs --port 8998` then open `/` (live scrubber + shot buttons + audio).
+5. Watch it: `node tools/serve.mjs --port 8998` then open `/`. The page renders live and synthesises the soundtrack in the
+   browser (a few seconds after load); play / scrub / jump to shots. `node tools/audio.mjs` checks score.mjs builds.
+6. Optional MP4: `node tools/render.mjs --frames && node tools/audio.mjs && node tools/render.mjs --encode`
+   (one render at a time: parallel GPU pages crash).
 
 ## Answer format (when a model writes the files)
 Each file as a fenced block whose first line is `// FILE: src/timeline.js` (or `src/shots.js`, `src/score.mjs`),

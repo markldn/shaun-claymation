@@ -118,18 +118,24 @@ window.renderFrame = renderFrame;
 window.story = story;
 window.probe = t => story.probe(t);
 
-// ---- live preview (index.html without ?render) ----
+// ---- live preview (index.html without ?render): picture rendered live, soundtrack synthesised in a worker ----
 if (!Q.has('render')) {
+  const { createSound } = await import('./sound.js');
   const ui = document.getElementById('ui'); ui.hidden = false;
-  const range = document.getElementById('t'), lab = document.getElementById('lab'), audio = document.getElementById('au');
+  const range = document.getElementById('t'), lab = document.getElementById('lab'), snd = document.getElementById('snd');
+  const sound = createSound(T, s => { snd.textContent = '   ' + s; });
   range.max = T.DUR; range.step = 1 / T.FPS;
-  let playing = false, t0 = 0, s0 = 0;
+  let playing = false, t0 = 0, s0 = 0, withSound = false;
   const show = t => { renderFrame(t); const sh = T.shots.find(s => t >= s.start && t < s.end); lab.textContent = `${t.toFixed(2)} s   ${sh ? sh.id : ''}`; };
-  range.oninput = () => { playing = false; audio.pause(); show(+range.value); };
-  document.getElementById('play').onclick = () => { playing = !playing; if (playing) { t0 = performance.now(); s0 = +range.value; audio.currentTime = s0; audio.play().catch(() => {}); loop(); } else audio.pause(); };
-  const loop = () => { if (!playing) return; const t = s0 + (performance.now() - t0) / 1000; if (t >= T.DUR) { playing = false; return; } range.value = t; show(t); requestAnimationFrame(loop); };
+  const stop = () => { playing = false; sound.stop(); };
+  const start = () => { playing = true; t0 = performance.now(); s0 = +range.value >= T.DUR - .05 ? 0 : +range.value; withSound = sound.ready; if (withSound) sound.play(s0); loop(); };
+  range.oninput = () => { stop(); show(+range.value); };
+  document.getElementById('play').onclick = () => playing ? stop() : start();
+  // clock: real time since play, so picture and sound stay locked even when a frame renders slowly
+  const loop = () => { if (!playing) return; if (!withSound && sound.ready) { withSound = true; sound.play(s0 + (performance.now() - t0) / 1000); }
+    const t = s0 + (performance.now() - t0) / 1000; if (t >= T.DUR) { stop(); return; } range.value = t; show(t); requestAnimationFrame(loop); };
   const jump = document.getElementById('shots');
-  T.shots.forEach(s => { const b = document.createElement('button'); b.textContent = s.id; b.onclick = () => { range.value = s.start + .01; show(s.start + .01); }; jump.appendChild(b); });
+  T.shots.forEach(s => { const b = document.createElement('button'); b.textContent = s.id; b.onclick = () => { const was = playing; stop(); range.value = s.start + .01; show(s.start + .01); if (was) start(); }; jump.appendChild(b); });
   show(+(Q.get('t') || 0));
 }
 window.ready = true;
