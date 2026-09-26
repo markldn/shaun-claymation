@@ -100,10 +100,10 @@ export function makeSheep(kind = 'flock', seed = 1, sc = 1) {
   const ears = [1, -1].map(s => { const p = grp(head, s * .13, .1, -.03); const e = ell(.1, .03, .05, M.face, .05, seed + s); e.position.x = s * .08; p.add(e);
     const inner = ell(.07, .012, .03, M.pink, .04, seed + s + 3); inner.position.set(s * .085, .018, .008); p.add(inner); return p; });
   // mouth: smile arc, open mouth, teeth
-  const mouthG = grp(head, 0, -.122, .212); mouthG.rotation.x = -.55;
+  const mouthG = grp(head, 0, -.118, .222); mouthG.rotation.x = -.25;
   const smileM = mesh(new THREE.TorusGeometry(.045, .007, 8, 24, Math.PI * .75), M.mouth); smileM.rotation.z = Math.PI + Math.PI * .125; mouthG.add(smileM);
-  const openM = ell(.064, .05, .035, M.mouth, .02, seed + 8); openM.position.z = .0; mouthG.add(openM);
-  const tongue = ell(.035, .012, .02, M.tongue, .02, seed + 9); tongue.position.set(0, -.02, .01); openM.add(tongue);
+  const openM = ell(.055, .07, .022, M.mouth, .02, seed + 8); openM.position.set(0, -.015, -.01); mouthG.add(openM);
+  const tongue = ell(.03, .01, .018, M.tongue, .02, seed + 9); tongue.position.set(0, -.022, .004); openM.add(tongue);
   const teeth = mesh(new THREE.BoxGeometry(.045, .025, .012), M.teeth); teeth.position.set(0, .012, .02); mouthG.add(teeth);
   // hair
   let top = null;

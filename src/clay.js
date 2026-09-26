@@ -139,7 +139,7 @@ export function buildMaterials() {
   M.face = clay('#1b1a1d', { rough: .42, bump: 1.1, sheen: .35, sheenColor: '#8a8aa0', coat: .15 });
   M.eye = clay('#faf8f0', { rough: .22, bump: .3, coat: .6, sheen: 0 });
   M.pupil = clay('#070708', { rough: .12, bump: .1, coat: 1, sheen: 0 });
-  M.mouth = clay('#5b1e25', { rough: .5 });
+  M.mouth = clay('#35101a', { rough: .6, sheen: 0 });
   M.tongue = clay('#d9667a', { rough: .45 });
   M.teeth = clay('#fbf6e8', { rough: .3 });
   M.pink = clay('#e89aa6', { rough: .5 });

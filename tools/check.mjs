@@ -74,7 +74,8 @@ for (const s of S) {
   const readable = samples.filter(x => x.p.some(seen)).length;
   if (readable < Math.ceil(samples.length * .6)) {
     const best = samples.map(x => x.p.filter(a => a.inside > .3).sort((a, b) => b.h - a.h)[0]).filter(Boolean)[0];
-    warns.push(`shot ${s.id}: nobody is readable (largest on-screen character ${best ? `${best.name} ${(best.h * 100).toFixed(0)}% of frame height at ${best.dist} m` : 'none'}). `
+    if (best && best.h >= .14) warns.push(`shot ${s.id}: ${best.name} is big enough (${Math.round(best.h * 100)}%) but mostly outside the frame (${Math.round(best.inside * 100)}% inside) in most samples: aim the camera (look) at them or keep them nearer the centre`);
+    else warns.push(`shot ${s.id}: nobody is readable (largest on-screen character ${best ? `${best.name} ${(best.h * 100).toFixed(0)}% of frame height at ${best.dist} m` : 'none'}). `
       + `Aim for the subject at 25-60% of frame height${best ? `: move the camera to about ${(best.dist * best.h / .35).toFixed(1)} m from ${best.name}` : ''}, or narrow fov`);
   }
   // hero rule

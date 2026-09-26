@@ -146,7 +146,7 @@ export async function buildStory(scene, SET, camera) {
     return {
       light: Lt, shadowAt: v2.set(...(c.shadowAt || c.look)), shadowSize: c.shadowSize || 14,
       focus, aperture: c.aperture ?? .0022, maxblur: c.maxblur ?? .0055,
-      fade: c.fade || 0, iris: c.iris ?? 2, irisC,
+      fade: c.fade || 0, iris: c.iris ?? 10, irisC,
     };
   }
   // Framing probe (tools/check.mjs): screen box of every visible cast member at time t, in 0..1 frame units.

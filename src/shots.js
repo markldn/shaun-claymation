@@ -195,7 +195,7 @@ Object.assign(SHOTS, {
   // ======================= 8. SHOCK: Shaun's take =======================
   shock: (m, C) => ({
     hero: 'shaun',
-    cam: K([0, { pos: [.8, 1.15, 4.3], look: [1.95, 1.15, 2.2], fov: 30 }], [2.5, { pos: [.9, 1.2, 4.05], look: [1.95, 1.25, 2.2] }, 'lin']),
+    cam: K([0, { pos: [-.3, 1.2, 3.7], look: [1.95, 1.2, 2.2], fov: 30 }], [2.5, { pos: [-.15, 1.25, 3.55], look: [1.95, 1.3, 2.2] }, 'lin']),
     cast: {
       shaun: (lt, t) => {
         const take = spring(lt, m.take, 2.6, .35), sq = 1 + wobble(lt, m.take + .05, 3, 5) * .18;
@@ -527,7 +527,7 @@ Object.assign(SHOTS, {
     const endT = C.text('THE END', { size: .8 }), Z = 5.2, g0 = ground(0, Z);
     return {
       hero: 'shaun',
-      cam: lt => ({ pos: [.5, 1.2, 10.4], look: [lerp(.2, .9, smooth(m.wink, m.iris + .4, lt)), .95, Z], fov: 34, irisOn: lt > m.pop + .2 ? 'shaun' : null, iris: lt < m.iris ? 2 : lt < m.iris + .45 ? lerp(1.3, .17, ease.out3((lt - m.iris) / .45)) : lt < 2.6 ? .17 : lerp(.17, 0, ease.in3(clamp((lt - 2.6) / .3))), fade: smooth(2.85, 3, lt) }),
+      cam: lt => ({ pos: [.5, 1.2, 10.4], look: [lerp(.2, .9, smooth(m.wink, m.iris + .4, lt)), .95, Z], fov: 34, irisOn: lt > m.pop + .2 ? 'shaun' : null, iris: lt < m.iris ? 10 : lt < m.iris + .45 ? lerp(2.2, .17, ease.out3((lt - m.iris) / .45)) : lt < 2.6 ? .17 : lerp(.17, 0, ease.in3(clamp((lt - 2.6) / .3))), fade: smooth(2.85, 3, lt) }),
       cast: {
         shaun: (lt, t) => { if (lt < m.pop) return { x: 4, z: Z + .9, y: -3, vis: false };
           const u = clamp((lt - m.pop) / .35), q = arc([3.4, 0, Z + .9], [1.75, 0, Z + .85], u, .8), baa = lt > m.baa && lt < m.baa + .45, land = lt - m.pop - .35;
