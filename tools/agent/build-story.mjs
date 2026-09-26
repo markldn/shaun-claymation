@@ -39,10 +39,15 @@ const starter = WRITABLE.map(f => `===== working example ${f} (a 24 s story, "Th
 const example = opt('example') ? ['examples/shaun/timeline.js', 'examples/shaun/shots.js', 'examples/shaun/score.mjs']
   .map(f => `===== reference ${f} (the 2-minute film "Up, Up & Baa-way!": mechanics only, never reuse its story, gags or tunes) =====\n\`\`\`js\n${read(f)}\`\`\``).join('\n') : '';
 const system = `You are the director, animator and composer of a silent slapstick claymation short in the style of Shaun the Sheep.
-You write it as code for the kit documented below.
+You write it as code for the kit documented below. You have NO tools: do not call functions, list or read files. Everything you
+need (the docs, src/stage.js, a working example of all three files) is in this message; answer with text and FILE blocks only.
 ${FORMAT}
 
 ${docs.map(f => `===== ${f} =====\n${read(f)}`).join('\n\n')}
+
+===== src/stage.js (the helpers shots.js imports; read-only) =====
+\`\`\`js
+${read('src/stage.js')}\`\`\`
 
 ${starter}
 ${example}`;
@@ -102,6 +107,9 @@ const DESIGN = `Before any code, write the DESIGN (no code in this answer):
    Shots back to back from 0 to DUR, 2-7 s each (1-1.5 s for reaction cut-ins).
 4. STAGING: for every shot, where each character stands (x, z on the farm map in API.md), where the camera is, and why nothing blocks the hero.
 5. MUSIC: key, your own 8-16 note tune as [note, beats], which phrase plays under which shots (calm / sneaky / chase / suspense / triumph), where the silences are.
+Use ONLY what API.md lists: the cast (the Farmer exists only sitting in his car), the built-in props, the farm layout
+(coordinates!). Any other object (a cake, a ball, a hose) is built with C.prop from clay primitives. Keep the action in the open field or
+on the lane; check every camera and character position against the farm map (walls at z -10.2, the gate at (-5,-10), trees).
 Invent a new story from the brief. Do not reuse the working example's apple gag or the reference film's gags, shots or tunes.`;
 const IMPLEMENT = `Now implement YOUR design exactly: src/timeline.js (shots + marks + light), src/shots.js (one entry per shot, each with hero, cam, cast, fx as needed), src/score.mjs (every mark that has an action gets its sound via at(shot, mark)). Follow docs/API.md exactly: import helpers from './stage.js', characters only from the cast list, props via C.prop, text via C.text.`;
 
@@ -119,7 +127,10 @@ for (let round = 1; round <= rounds; round++) {
   console.log(`round ${round}: asking ${model}`);
   const ans = await chat(messages); messages.push({ role: 'assistant', content: ans }); log(`## Round ${round}: answer\n\n${ans}\n`);
   const fsOut = files(ans);
-  if (!fsOut.length) { messages.push({ role: 'user', content: `I found no files. ${FORMAT}` }); log(`## Round ${round}: no files\n`); continue; }
+  if (!fsOut.length) {
+    const tool = /<tool_call>|<function=/.test(ans);
+    messages.push({ role: 'user', content: tool ? `There are no tools here: nothing you call will run. Everything is already in the system message (docs, src/stage.js, the three example files). Write the three files now, as FILE blocks. ${FORMAT}` : `I found no files. ${FORMAT}` });
+    log(`## Round ${round}: no files${tool ? ' (tool call attempted)' : ''}\n`); continue; }
   writeAll(fsOut);
   result = check(); console.log(result.text.split('\n').map(l => '  ' + l).join('\n'));
   log(`## Round ${round}: check\n\n\`\`\`\n${result.text}\n\`\`\`\n`);
